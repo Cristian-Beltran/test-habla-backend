@@ -33,7 +33,7 @@ export class PatientController {
 
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.patientService.findOne(id);
+    return this.patientService.findPatient(id);
   }
 
   @Put(':id')

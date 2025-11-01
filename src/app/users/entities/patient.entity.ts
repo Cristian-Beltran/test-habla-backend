@@ -5,6 +5,7 @@ import {
   OneToOne,
   JoinColumn,
   ManyToMany,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { FamilyMember } from './family.entity';

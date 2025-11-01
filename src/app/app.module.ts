@@ -8,6 +8,8 @@ import { AuthModule } from 'src/context/auth/auth.module';
 import { PdfModule } from 'src/context/pdf/pdf.module';
 import { UsersModule } from './users/user.module';
 import { DeviceModule } from './device/device.module';
+import { IaModule } from './ia/ia.module';
+import { SesionModule } from './sesion/sesion.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { DeviceModule } from './device/device.module';
     PdfModule,
     LoggerModule,
     AuthModule,
+    IaModule,
+    SesionModule,
   ],
 })
 export class AppModule {}

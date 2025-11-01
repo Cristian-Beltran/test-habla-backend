@@ -6,7 +6,7 @@ import { Patient } from '../entities/patient.entity';
 import { CreatePatientDto } from '../dtos/patient.dto';
 import { UserBaseService } from './users.service';
 import { UserType } from '../enums/user-type';
-import { Status } from '../../../context/shared/models/active.model';
+import { Status } from 'src/context/shared/models/active.model';
 
 @Injectable()
 export class PatientService {
@@ -40,6 +40,15 @@ export class PatientService {
       relations: ['user', 'device'],
       where: { user: { status: Not(Status.DELETED) } },
     });
+  }
+
+  async findPatient(id: string): Promise<Patient> {
+    const patient = await this.patientRepository.findOne({
+      where: { id },
+      relations: ['user', 'device'],
+    });
+    if (!patient) throw new NotFoundException(`Patient ${id} not found`);
+    return patient;
   }
 
   async findOne(id: string): Promise<Patient> {

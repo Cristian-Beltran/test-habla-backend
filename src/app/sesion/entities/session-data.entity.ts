@@ -4,27 +4,30 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Session } from './session.entity';
 
 @Entity('session_data')
+@Index('idx_session_data_recorded_at', ['recordedAt'])
 export class SessionData {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Session, (session) => session.records)
+  @ManyToOne(() => Session, (s) => s.records, { onDelete: 'CASCADE' })
   session: Session;
 
-  @Column('float')
-  lungCapacity: number; // voltajes +/- convertidos a valor clínico
+  // === Respiración (presión como VOLTAJE) ===
+  @Column('float', { nullable: true })
+  pressureVolt: number | null; // Ej. 0–3.3V (filtrado en el dispositivo)
 
-  @Column('int')
-  pulse: number;
+  // === Cardiaco / SpO2 ===
+  @Column('float', { nullable: true })
+  bpm: number | null;
 
-  @Column('int')
-  oxygenSaturation: number;
+  @Column('float', { nullable: true })
+  spo2: number | null;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp' })
   recordedAt: Date;
 }
