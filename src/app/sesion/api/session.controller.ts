@@ -20,7 +20,7 @@ export class SessionController {
    * (crea o continúa la sesión del día según el dispositivo).
    */
   @Post('ingest')
-  ingest(@Body() dto: IngestSessionDto) {
+  ingest(@Body() dto) {
     return this.service.ingest(dto);
   }
 

@@ -11,16 +11,6 @@ export class IngestSessionDto {
   @IsString()
   serialNumber: string;
 
-  // Epoch opcional en ms; prioridad menor que recordedAt
-  @IsOptional()
-  @IsInt()
-  ts?: number;
-
-  // === Presión (voltaje) ===
-  @IsOptional()
-  @IsNumber()
-  pressureVolt?: number;
-
   // === Cardiaco / SpO2 ===
   @IsOptional()
   @IsNumber()

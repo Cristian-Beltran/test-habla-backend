@@ -32,25 +32,33 @@ export class SessionService {
     @InjectRepository(Test)
     private readonly testRepo: Repository<Test>,
   ) {}
-
-  private dayBounds(base = new Date()) {
-    const start = new Date(base);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(base);
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  }
+  private readonly TZ = 'America/La_Paz'; // ajusta si aplica
 
   private async getOrCreateTodaySession(patient: Patient, device: Device) {
-    const { start, end } = this.dayBounds();
-
-    let session = await this.sessionRepo.findOne({
-      where: { patient, device, startedAt: Between(start, end) },
-      relations: ['patient', 'device'],
-    });
+    // Busca la sesión del "día local" en TZ elegida, pero comparando en UTC
+    let session = await this.sessionRepo
+      .createQueryBuilder('s')
+      .leftJoinAndSelect('s.patient', 'patient')
+      .leftJoinAndSelect('s.device', 'device')
+      .where('s.patientId = :patientId', { patientId: patient.id })
+      .andWhere('s.deviceId = :deviceId', { deviceId: device.id })
+      // ventana del día (TZ) convertida a UTC:
+      .andWhere(
+        `s.startedAt >= timezone('UTC', date_trunc('day', now() at time zone :tz))`,
+        { tz: this.TZ },
+      )
+      .andWhere(
+        `s.startedAt <  timezone('UTC', date_trunc('day', (now() at time zone :tz) + interval '1 day'))`,
+        { tz: this.TZ },
+      )
+      .getOne();
 
     if (!session) {
-      session = this.sessionRepo.create({ patient, device });
+      session = this.sessionRepo.create({
+        patient,
+        device,
+        startedAt: new Date(), // imprescindible
+      });
       session = await this.sessionRepo.save(session);
       session = await this.sessionRepo.findOneOrFail({
         where: { id: session.id },
@@ -59,7 +67,6 @@ export class SessionService {
     }
     return session;
   }
-
   /**
    * Ingesta UNIFICADA:
    * - Busca device por serial.
@@ -71,10 +78,7 @@ export class SessionService {
       throw new BadRequestException('serialNumber requerido');
     }
 
-    const hasAny =
-      dto.pressureVolt !== undefined ||
-      dto.bpm !== undefined ||
-      dto.spo2 !== undefined;
+    const hasAny = dto.bpm !== undefined || dto.spo2 !== undefined;
 
     if (!hasAny) {
       throw new BadRequestException(
@@ -93,18 +97,11 @@ export class SessionService {
     const session = await this.getOrCreateTodaySession(device.patient, device);
 
     // recordedAt: preferencia recordedAt ISO > ts ms > now
-    const recordedAt = dto.recordedAt
-      ? new Date(dto.recordedAt)
-      : dto.ts
-        ? new Date(dto.ts)
-        : new Date();
 
     const record = this.dataRepo.create({
       session,
-      pressureVolt: dto.pressureVolt ?? null,
       bpm: dto.bpm ?? null,
       spo2: dto.spo2 ?? null,
-      recordedAt,
     });
 
     const saved = await this.dataRepo.save(record);
