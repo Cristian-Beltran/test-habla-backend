@@ -30,6 +30,10 @@ export class PatientController {
   findAll() {
     return this.patientService.findAll();
   }
+  @Get('user/:id')
+  findOneUser(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.patientService.findOne(id);
+  }
 
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {

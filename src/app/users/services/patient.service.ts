@@ -52,6 +52,7 @@ export class PatientService {
   }
 
   async findOne(id: string): Promise<Patient> {
+    console.log(id);
     const patient = await this.patientRepository.findOne({
       where: { user: { id } },
       relations: ['user', 'device'],

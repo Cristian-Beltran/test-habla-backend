@@ -13,6 +13,7 @@ import { Patient } from 'src/app/users/entities/patient.entity';
 import { IngestSessionDto } from '../dtos/session-data.dto';
 import { Test } from '../entities/test.entity';
 import { CreateTestDto } from '../dtos/create-test.dto';
+import { Status } from 'src/context/shared/models/active.model';
 
 @Injectable()
 export class SessionService {
@@ -87,7 +88,7 @@ export class SessionService {
     }
 
     const device = await this.deviceRepo.findOne({
-      where: { serialNumber: dto.serialNumber },
+      where: { serialNumber: dto.serialNumber, status: Status.ACTIVE },
       relations: ['patient'],
     });
     if (!device) throw new NotFoundException('Device no encontrado');
