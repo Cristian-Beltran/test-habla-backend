@@ -103,6 +103,7 @@ export class SessionService {
       session,
       bpm: dto.bpm ?? null,
       spo2: dto.spo2 ?? null,
+      pressureVolt: dto.pressureVolt,
     });
 
     const saved = await this.dataRepo.save(record);

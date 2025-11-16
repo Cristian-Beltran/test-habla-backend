@@ -20,6 +20,10 @@ export class IngestSessionDto {
   @IsNumber()
   spo2?: number;
 
+  @IsOptional()
+  @IsNumber()
+  pressureVolt?: number;
+
   // ISO opcional; tiene prioridad sobre ts
   @IsOptional()
   @IsDateString()
