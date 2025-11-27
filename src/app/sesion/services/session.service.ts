@@ -151,6 +151,8 @@ export class SessionService {
       patient,
       score: dto.score,
       aiComment: dto.aiComment,
+      inputText: dto.inputText,
+      userText: dto.userText,
     });
     return this.testRepo.save(test);
   }

@@ -9,7 +9,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { IaService } from './ia.service';
-import { EvaluateIaDto } from './ia.dto'; // <-- importa el DTO exportado
+import { CompareSpeechDto, EvaluateIaDto } from './ia.dto'; // <-- importa el DTO exportado
 
 @Controller('ia')
 export class IaController {
@@ -40,6 +40,15 @@ export class IaController {
     const result = await this.iaService.evaluateSpeech({
       targetText: body.text,
       audio,
+    });
+
+    return result;
+  }
+  @Post('compare')
+  async compare(@Body() body: CompareSpeechDto) {
+    const result = await this.iaService.compareSpeechProgress({
+      previousText: body.previousText,
+      currentText: body.currentText,
     });
 
     return result;

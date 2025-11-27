@@ -18,6 +18,14 @@ export class Test {
   @ManyToOne(() => Patient, { eager: true, onDelete: 'CASCADE' })
   patient: Patient;
 
+  // Texto de referencia (guía / target)
+  @Column({ type: 'text', default: '' })
+  inputText: string;
+
+  // Texto producido por el usuario / transcripción
+  @Column({ type: 'text', default: '' })
+  userText: string;
+
   // Nota 0–10 (permite decimales: ej. 7.5)
   @Column({ type: 'float' })
   score: number;

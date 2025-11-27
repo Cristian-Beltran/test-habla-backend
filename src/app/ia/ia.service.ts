@@ -9,6 +9,14 @@ export interface SpeechEvalResult {
   comment: string;
 }
 
+export interface SpeechProgressResult {
+  previousScore: number;
+  currentScore: number;
+  delta: number;
+  improved: boolean;
+  comment: string;
+}
+
 @Injectable()
 export class IaService {
   private readonly client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -106,6 +114,89 @@ export class IaService {
         score: 0,
         comment: 'No se pudo interpretar la respuesta del modelo.',
       };
+    }
+  }
+
+  async compareSpeechProgress(params: {
+    previousText: string;
+    currentText: string;
+  }): Promise<SpeechProgressResult> {
+    const { previousText, currentText } = params;
+
+    try {
+      const systemPrompt = `
+  Eres un terapeuta del habla especializado en tartamudez.
+  Vas a comparar DOS TRANSCRIPCIONES de la misma persona en momentos distintos.
+
+  Objetivo:
+  - Evaluar cada transcripción con una calificación de 0 a 100 según fluidez, continuidad del discurso, presencia de bloqueos y repeticiones.
+  - Indicar si en la segunda transcripción hay mejora, empeoramiento o se mantiene igual.
+  - Dar un comentario corto, profesional y alentador (máx. 2–3 frases).
+
+  Responde EXCLUSIVAMENTE en JSON válido, SIN texto adicional, con las claves:
+  {
+    "previousScore": number,
+    "currentScore": number,
+    "delta": number,
+    "improved": boolean,
+    "comment": string
+  }
+      `.trim();
+
+      const userPrompt = `
+  TRANSCRIPCIÓN ANTERIOR:
+  ${previousText}
+
+  TRANSCRIPCIÓN ACTUAL:
+  ${currentText}
+      `.trim();
+
+      // 🔁 CAMBIO CLAVE: usar chat.completions con response_format json_object
+      const response = await this.client.chat.completions.create({
+        model: this.evalModel, // gpt-4o-mini soporta response_format
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      });
+
+      const raw = response.choices?.[0]?.message?.content?.trim() ?? '{}';
+
+      // Opcional: log para depurar si algo va mal en futuro
+      // console.log('compareSpeechProgress raw:', raw);
+
+      const parsed = JSON.parse(raw);
+
+      const previousScore = Number(parsed.previousScore);
+      const currentScore = Number(parsed.currentScore);
+
+      const safePrev = Number.isFinite(previousScore) ? previousScore : 0;
+      const safeCurr = Number.isFinite(currentScore) ? currentScore : 0;
+
+      const delta =
+        typeof parsed.delta === 'number' ? parsed.delta : safeCurr - safePrev;
+
+      const improved =
+        typeof parsed.improved === 'boolean' ? parsed.improved : delta > 0;
+
+      return {
+        previousScore: safePrev,
+        currentScore: safeCurr,
+        delta,
+        improved,
+        comment:
+          typeof parsed.comment === 'string' && parsed.comment.trim().length
+            ? parsed.comment.trim()
+            : 'Comparación generada, sin comentario descriptivo adicional.',
+      };
+    } catch (err: any) {
+      // Si por alguna razón el modelo igual devuelve algo raro, lo ves en logs
+      console.error('Error en compareSpeechProgress:', err?.message, err);
+      throw new InternalServerErrorException(
+        err?.message || 'Fallo al comparar las transcripciones',
+      );
     }
   }
 }
